@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanzApp | Organizador Financiero</title>
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        :root {
+            --primary: #2962ff;
+            --secondary: #00c853;
+            --danger: #ff1744;
+            --dark: #263238;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark);
+        }
+        
+        .brand-logo {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        
+        .brand-logo i {
+            margin-right: 10px;
+        }
+        
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .transaction-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .transaction-income {
+            border-left-color: var(--secondary);
+        }
+        
+        .transaction-expense {
+            border-left-color: var(--danger);
+        }
+        
+        .transaction-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        
+        .balance-card {
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(41, 98, 255, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(41, 98, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 98, 255, 0); }
+        }
+        
+        .btn-floating:hover {
+            transform: rotate(15deg) scale(1.1);
+        }
+        
+        .section {
+            padding: 20px 0;
+        }
+        
+        .input-field label {
+            color: var(--dark);
+        }
+        
+        .input-field input:focus + label {
+            color: var(--primary) !important;
+        }
+        
+        .input-field input:focus {
+            border-bottom: 1px solid var(--primary) !important;
+            box-shadow: 0 1px 0 0 var(--primary) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="nav-extended blue darken-2">
+        <div class="nav-wrapper container">
+            <a href="/" class="brand-logo animate__animated animate__fadeInLeft">
+                <i class="fas fa-coins"></i> Finanzas
+            </a>
+        </div>
+        <div class="nav-content container">
+            <span class="nav-title white-text animate__animated animate__fadeIn">Control Financiero Personal</span>
+            <a class="btn-floating btn-large halfway-fab waves-effect waves-light green animate__animated animate__bounceIn" id="add-transaction-btn">
+                <i class="material-icons">add</i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Balance Card -->
+        <div class="balance-card blue animate__animated animate__zoomIn">
+            <h5 class="white-text"><i class="material-icons left">account_balance_wallet</i> Balance Total</h5>
+            <h3 class="white-text">${{ "%.2f"|format(balance) }}</h3>
+            <p class="white-text">
+                {% if balance >= 0 %}
+                    <i class="material-icons tiny">trending_up</i> Salud financiera positiva
+                {% else %}
+                    <i class="material-icons tiny">trending_down</i> Necesitas ajustes
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Transaction Form (Hidden by Default) -->
+        <div class="card-panel white animate__animated animate__fadeInUp" id="transaction-form" style="display: none;">
+            <h5 class="center-align"><i class="material-icons left">receipt</i> Nueva Transacción</h5>
+            <form action="/add" method="POST">
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">description</i>
+                        <input id="description" name="description" type="text" class="validate" required>
+                        <label for="description">Descripción</label>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">attach_money</i>
+                        <input id="amount" name="amount" type="number" step="0.01" class="validate" required>
+                        <label for="amount">Monto</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">date_range</i>
+                        <input type="date" name="date" class="datepicker" required>
+                    </div>
+                    <div class="input-field col s12 m4">
+                        <select name="type" id="type-select" required>
+                            <option value="" disabled selected>Tipo de transacción</option>
+                            <option value="income">Ingreso</option>
+                            <option value="expense">Gasto</option>
+                        </select>
+                    </div>
+                    <div class="input-field col s12 m4">
+                        <select name="category" id="category-select" required>
+                            <option value="" disabled selected>Seleccione categoría</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="center-align">
+                    <button class="btn waves-effect waves-light blue" type="submit">
+                        <i class="material-icons left">save</i>Guardar
+                    </button>
+                    <a class="btn waves-effect waves-light grey" id="cancel-btn">
+                        <i class="material-icons left">cancel</i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Transactions List -->
+        <div class="section animate__animated animate__fadeIn">
+            <h5 class="blue-text"><i class="material-icons left">list_alt</i> Historial de Transacciones</h5>
+            
+            {% if not transactions %}
+                <div class="center-align" style="padding: 40px 0;">
+                    <i class="material-icons large grey-text">receipt</i>
+                    <h6 class="grey-text">No hay transacciones registradas</h6>
+                    <p class="grey-text">Comienza agregando tu primera transacción</p>
+                </div>
+            {% else %}
+                {% for t in transactions %}
+                <div class="card transaction-item animate__animated animate__fadeInUp" style="animation-delay: {{ loop.index * 0.1 }}s">
+                    <div class="card-content">
+                        <div class="row" style="margin-bottom: 0;">
+                            <div class="col s8">
+                                <span class="card-title">
+                                    <i class="material-icons left {{ 'green-text' if t.Transaction.type == 'income' else 'red-text' }}">
+                                        {{ 'arrow_upward' if t.Transaction.type == 'income' else 'arrow_downward' }}
+                                    </i>
+                                    {{ t.Transaction.description }}
+                                </span>
+                                <p>
+                                    <span class="chip"><i class="material-icons tiny">category</i> {{ t.category_name }}</span>
+                                    <span class="chip"><i class="material-icons tiny">date_range</i> {{ t.Transaction.date.strftime('%d/%m/%Y') }}</span>
+                                </p>
+                            </div>
+                            <div class="col s4 right-align">
+                                <h5 class="{{ 'green-text' if t.Transaction.type == 'income' else 'red-text' }}">
+                                    {{ '$%.2f'|format(t.Transaction.amount) }}
+                                </h5>
+                                <a href="/delete/{{ t.Transaction.id }}" class="btn-floating btn-small waves-effect waves-light red" title="Eliminar">
+                                    <i class="material-icons">delete</i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer blue darken-2">
+        <div class="container">
+            <div class="row">
+                <div class="col s12">
+                    <h6 class="white-text"><i class="material-icons left">info</i>FinanzApp v1.0</h6>
+                    <p class="grey-text text-lighten-4">Sistema de gestión financiera personal</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2023 FinanzApp
+                <a class="grey-text text-lighten-4 right" href="#!">Términos y Condiciones</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar componentes
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.Datepicker.init(document.querySelectorAll('.datepicker'), {
+                format: 'yyyy-mm-dd',
+                autoClose: true,
+                defaultDate: new Date()
+            });
+
+            // Mostrar/ocultar formulario
+            const form = document.getElementById('transaction-form');
+            document.getElementById('add-transaction-btn').addEventListener('click', () => {
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+            document.getElementById('cancel-btn').addEventListener('click', () => {
+                form.style.display = 'none';
+            });
+
+            // Categorías dinámicas
+            const categories = {
+                income: [
+                    {id: 1, name: 'Salario'},
+                    {id: 2, name: 'Ventas'}
+                ],
+                expense: [
+                    {id: 3, name: 'Comida'},
+                    {id: 4, name: 'Transporte'},
+                    {id: 5, name: 'Entretenimiento'}
+                ]
+            };
+
+            document.getElementById('type-select').addEventListener('change', function() {
+                const categorySelect = document.getElementById('category-select');
+                categorySelect.innerHTML = '<option value="" disabled selected>Seleccione categoría</option>';
+                
+                const selectedCategories = this.value === 'income' ? categories.income : categories.expense;
+                
+                selectedCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    categorySelect.appendChild(option);
+                });
+                
+                M.FormSelect.init(categorySelect);
+            });
+
+            // Efecto de carga
+            setTimeout(() => {
+                document.querySelectorAll('.animate__animated').forEach(el => {
+                    el.style.opacity = 1;
+                });
+            }, 300);
+        });
+    </script>
+</body>
+</html>
